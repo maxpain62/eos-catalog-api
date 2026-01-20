@@ -1,121 +1,55 @@
-def label = "eosagent"
-def mvn_version = 'M2'
-podTemplate(label: label, yaml: """
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: build
-  annotations:
-    sidecar.istio.io/inject: "false"
-spec:
-  containers:
-  - name: build
-    image: dpthub/eos-jenkins-agent-base:latest
-    command:
-    - cat
-    tty: true
-    volumeMounts:
-    - name: dockersock
-      mountPath: /var/run/docker.sock
-  volumes:
-  - name: dockersock
-    hostPath:
-      path: /var/run/docker.sock
-"""
-) {
-    node (label) {
-        stage ('Checkout SCM'){
-          git credentialsId: 'git', url: 'https://dptrealtime@bitbucket.org/dptrealtime/eos-catalog-api.git', branch: 'master'
-          container('build') {
-                stage('Build a Maven project') {
-                  //withEnv( ["PATH+MAVEN=${tool mvn_version}/bin"] ) {
-                   //sh "mvn clean package"
-                  //  }
-                  sh './mvnw clean package' 
-                   //sh 'mvn clean package'
-                }
-            }
+podTemplate(yaml: readTrusted('pod.yaml')) {
+  node(POD_LABEL) {
+    stage('Checkout Source') {
+        
+      git branch: 'main', url: 'https://github.com/maxpain62/eos-catalog-api.git'
+      script {
+            // Capture tag into a Groovy variable
+            env.GIT_TAG = sh(
+                script: "git tag --sort=-creatordate | head -1",
+                returnStdout: true
+            ).trim()
         }
-        stage ('Sonar Scan'){
-          container('build') {
-                stage('Sonar Scan') {
-                  withSonarQubeEnv('sonar') {
-                  sh './mvnw verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=eos_eos'
-                }
-                }
-            }
+        echo "${env.GIT_TAG}"
+      }
+    stage ('save codeartifact token') {
+      container('aws-cli') {
+        sh """
+          aws codeartifact get-authorization-token --domain eos --domain-owner 134448505602 --region ap-south-1 --query authorizationToken --output text > /root/.m2/token.txt
+           """
         }
-
-
-        stage ('Artifactory configuration'){
-          container('build') {
-                stage('Artifactory configuration') {
-                    rtServer (
-                    id: "jfrog",
-                    url: "https://eosartifact.jfrog.io/artifactory",
-                    credentialsId: "jfrog"
-                )
-
-                rtMavenDeployer (
-                    id: "MAVEN_DEPLOYER",
-                    serverId: "jfrog",
-                    releaseRepo: "eos-libs-release-local",
-                    snapshotRepo: "eos-libs-release-local"
-                )
-
-                rtMavenResolver (
-                    id: "MAVEN_RESOLVER",
-                    serverId: "jfrog",
-                    releaseRepo: "eos-libs-release",
-                    snapshotRepo: "eos-libs-release"
-                )            
-                }
-            }
+      }
+    stage ('buils maven project') {
+      container('maven') {
+      script {
+        try {
+          sh '''
+          cp settings.xml /root/.m2/settings.xml
+          TOKEN=$(cat /root/.m2/token.txt)
+          sed "s|replace_me|$TOKEN|" settings-template.xml > /root/.m2/settings.xml
+          ./mvnw clean deploy
+          '''
+          }
+        catch(e) {
+          echo "An error occurred: ${e}"
+          }
         }
-        stage ('Deploy Artifacts'){
-          container('build') {
-                stage('Deploy Artifacts') {
-                    rtMavenRun (
-                    tool: "java", // Tool name from Jenkins configuration
-                    useWrapper: true,
-                    pom: 'pom.xml',
-                    goals: 'clean install',
-                    deployerId: "MAVEN_DEPLOYER",
-                    resolverId: "MAVEN_RESOLVER"
-                  )
-                }
-            }
-        }
-        stage ('Publish build info') {
-            container('build') {
-                stage('Publish build info') {
-                rtPublishBuildInfo (
-                    serverId: "jfrog"
-                  )
-               }
-           }
-       }
-       stage ('Docker Build'){
-          container('build') {
-                stage('Build Image') {
-                    docker.withRegistry( 'https://registry.hub.docker.com', 'docker' ) {
-                    def customImage = docker.build("dpthub/eos-catalog-api:latest")
-                    customImage.push()             
-                    }
-                }
-            }
-        }
-
-        stage ('Helm Chart') {
-          container('build') {
-            dir('charts') {
-              withCredentials([usernamePassword(credentialsId: 'jfrog', usernameVariable: 'username', passwordVariable: 'password')]) {
-              sh '/usr/local/bin/helm package catalog-api'
-              sh '/usr/local/bin/helm push-artifactory catalog-api-1.0.tgz https://eosartifact.jfrog.io/artifactory/eos-helm-local --username $username --password $password'
-              }
-            }
-        }
-        }
+      }
     }
+    stage ('build docker image') {
+      container ('buildkit') {
+        sh """
+          ls -l && ls -l target/
+          buildctl --addr tcp://buildkitd.devops-tools.svc.cluster.local:1234\
+          --tlscacert /certs/ca.pem\
+          --tlscert /certs/cert.pem\
+          --tlskey /certs/key.pem\
+          build --frontend dockerfile.v0\
+          --opt filename=Dockerfile --local context=.\
+          --local dockerfile=.\
+          --output type=image,name=134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api:latest,push=true
+          """
+      }
+    }
+  }
 }

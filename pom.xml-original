@@ -82,13 +82,7 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	<distributionManagement>
-  		<repository>
-    			<id>eos-eos-catalog-api</id>
-    			<name>eos-eos-catalog-api</name>
-    			<url>https://eos-134448505602.d.codeartifact.ap-south-1.amazonaws.com/maven/eos-catalog-api/</url>
-  		</repository>
-	</distributionManagement>
+
 	<build>
 		<plugins>
 			<plugin>
