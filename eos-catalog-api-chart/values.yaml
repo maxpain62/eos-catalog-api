@@ -1,0 +1,12 @@
+replicaCount: 1
+
+containers:
+  image: 134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api:latest
+
+port: 8081
+
+labels:
+  app: eos-catalog-api
+  env: dev
+
+namespace: eos-dev
