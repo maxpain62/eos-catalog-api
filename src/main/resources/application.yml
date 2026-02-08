@@ -1,20 +1,20 @@
 server:
-    port: 8081
+  port: 8081
 
 spring:
   boot:
-       admin:
-            client:
-              url: http://eos-micro-services-admin-service:8090
-              instance:
-                service-base-url: http://eos-catalog-api-service:8081
+    admin:
+      client:
+        url: http://eos-micro-services-admin-service:8090
+        instance:
+          service-base-url: http://eos-catalog-api-service:8081
   application:
-      name: eos-catalog-api-service
+    name: eos-catalog-api-service
   cloud:
-      config:
-            uri: http://eos-cloud-config-api-service:8888
+    config:
+      uri: http://eos-cloud-config-api-service.eos-dev.svc.cluster.local:8888
   config:
-      import: optional:configserver:http://eos-cloud-config-api-service.prod.svc.cluster.local:8888/
+    import: optional:configserver:http://eos-cloud-config-api-service.eos-dev.svc.cluster.local:8888/
 eureka:
   client:
     serviceUrl:
@@ -24,15 +24,15 @@ eureka:
     enabled: true
   instance:
     instanceId: ${spring.application.name}:${server.port}
-    hostname: eos-catalog-api-service 
+    hostname: eos-catalog-api-service
     preferIpAddress: false
 management:
   endpoints:
-         web:
-            exposure:
-                 include: "*"
+    web:
+      exposure:
+        include: "*"
   endpoint:
-         health:
-            show-details: always
+    health:
+      show-details: always
   security:
-        enabled: false
+    enabled: false
