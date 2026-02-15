@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.org.proto</groupId>
 	<artifactId>catalog</artifactId>
-	<version>0.0.1-RELEASE</version>
+	<version>0.0.1-RELEASE-DEBUG</version>
 	<name>catalog</name>
 	<description>Demo project for Spring Boot</description>
 	<properties>
