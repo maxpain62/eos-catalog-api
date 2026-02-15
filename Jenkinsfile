@@ -48,7 +48,7 @@ podTemplate(yaml: readTrusted('pod.yaml')) {
           build --frontend dockerfile.v0\
           --opt filename=Dockerfile --local context=.\
           --local dockerfile=.\
-          --output type=image,name=134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api:latest-DEBUG,push=true
+          --output type=image,name=134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api:1.16.1,push=true
           """
       }
     }
@@ -56,7 +56,7 @@ podTemplate(yaml: readTrusted('pod.yaml')) {
       container('aws-cli-helm') {
         sh """
           helm package eos-catalog-api-chart && ls -l
-          helm push eos-catalog-api-debug-0.1.0.tgz oci://134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/helm/
+          helm push eos-catalog-api-debug-0.1.1.tgz oci://134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/helm/
           aws ecr describe-images --repository-name dev/helm/eos-catalog-api --region ap-south-1
           """
       }
