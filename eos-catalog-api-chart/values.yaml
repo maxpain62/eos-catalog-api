@@ -1,7 +1,7 @@
 replicaCount: 1
 
 containers:
-  image: 134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api:latest
+  image: 134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/eos-catalog-api
 
 port: 8081
 
