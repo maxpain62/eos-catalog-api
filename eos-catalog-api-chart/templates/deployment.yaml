@@ -21,7 +21,7 @@ spec:
     spec:      
       containers:
         - name: {{ .Values.labels.app }}-container
-          image: {{ .Values.containers.image }}
+          image: "{{ .Values.containers.image }}:{{ .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.port }}
               protocol: TCP
