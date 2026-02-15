@@ -56,7 +56,7 @@ podTemplate(yaml: readTrusted('pod.yaml')) {
       container('aws-cli-helm') {
         sh """
           helm package eos-catalog-api-chart && ls -l
-          helm push eos-catalog-api-0.1.0.tgz oci://134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/helm/
+          helm push eos-catalog-api-DEBUG-0.1.0.tgz oci://134448505602.dkr.ecr.ap-south-1.amazonaws.com/dev/helm/
           aws ecr describe-images --repository-name dev/helm/eos-catalog-api --region ap-south-1
           """
       }
